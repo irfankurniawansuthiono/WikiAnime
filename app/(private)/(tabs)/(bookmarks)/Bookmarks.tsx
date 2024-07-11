@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {Text, Layout, Icon} from '@ui-kitten/components';
+import React, { useState, useEffect, useRef } from 'react';
+import {Text, Layout, Icon, Input} from '@ui-kitten/components';
 import { getUserBookmarks } from '@/utils/FireStoreAction';
 import { getAccountData } from '@/utils/storage';
 import LoadingComponent from '@/components/Loading/Loading';
@@ -9,16 +9,17 @@ export default function Bookmarks() {
     const [loading, setLoading] = useState(true);
     const [bookmarkList, setBookmarkList] = useState([]);
     const [userData, setUserData] = useState(null);
+    const [search, setSearch] = useState<string>("");
     const [isRefreshing, setRefreshing] = useState<boolean>(false);
     const fetchAccountData = async () => {
         const response = await getAccountData();
         return response.data;
     };
-
-    const fetchUserBookmark = async (uid:any) => {
+    const fetchUserBookmark = async (uid:number) => {
         const response = await getUserBookmarks(uid);
         return response.data;
     };
+
     const fetchData = async (isRefreshing = false) => {
         try {
             if (isRefreshing) {
@@ -47,6 +48,19 @@ export default function Bookmarks() {
         }
     };
 
+
+    const searchBookmark = async () => {
+        if (search === null) {
+            onRefresh()
+        } else {
+            const filteredList = bookmarkList.filter((item: any) => {
+                return item.title.toLowerCase().includes(search.toLowerCase());
+            });
+            setBookmarkList(filteredList);
+        }
+    };
+
+
     const onRefresh = async()=>{
         if (userData !== null) {
             // @ts-ignore
@@ -59,8 +73,22 @@ export default function Bookmarks() {
     }
 
     useEffect(() => {
+        if(search !== ""){
+            searchBookmark()
+        }else{
+            onRefresh()
+        }
+    }, [search]);
+
+    useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        if(search === ""){
+            onRefresh();
+        }
+    }, [bookmarkList]);
 
     if (loading) {
         return <LoadingComponent/>;
@@ -197,25 +225,29 @@ export default function Bookmarks() {
     };
 
     return (
-        <Layout style={{height:"100%", padding: 10, gap: 10}}>
-            <View>
-                <Text category="s2" style={{ fontWeight: "bold", color: "red" }}>
-                    Didn't find newest bookmarks ? swipe down to refresh
-                </Text>
-            </View>
-        <View>
-            <FlatList
-                data={bookmarkList}
-                renderItem={renderItem}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={onRefresh}
+        <Layout level="1" style={{ padding: 10, gap: 10, height:"100%", }}>
+                <Input
+                    placeholder="Search Bookmarks..."
+                    value={search}
+                    style={{ borderRadius: 50 }}
+                    accessoryLeft={<Icon name="search-outline" fill="#3366ff" />}
+                    onChangeText={(text) => {
+                        setSearch(text);
+                    }}
+                />
+                <View style={{flex:1}}>
+                    <FlatList
+                        data={bookmarkList}
+                        renderItem={renderItem}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={isRefreshing}
+                                onRefresh={onRefresh}
+                            />
+                        }
+                        ListEmptyComponent={<Text style={{ textAlign: "center" }}>No bookmarks found</Text>}
                     />
-                }
-                ListEmptyComponent={<Text style={{ textAlign: "center" }}>No bookmarks found</Text>}
-            />
-        </View>
+                </View>
         </Layout>
     );
 }

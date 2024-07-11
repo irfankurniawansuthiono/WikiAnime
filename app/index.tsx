@@ -278,6 +278,14 @@ export default function SignInPage() {
               SignUp Here
             </Text>
           </Link>
+            <Link href={"Home"}>
+            <Text
+              category="s2"
+              style={{ color: "#3366ff", textDecorationLine: "underline" }}
+            >
+              Home
+            </Text>
+          </Link>
         </View>
       </Layout>
     </Layout>
